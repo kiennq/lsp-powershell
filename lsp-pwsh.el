@@ -4,7 +4,7 @@
 
 ;; Author: kien.n.quang@gmail.com
 ;; Keywords: languages
-;; Package-Requires: ((emacs "25.1") (lsp-mode "6.0") (dash))
+;; Package-Requires: ((emacs "25.1") (lsp-mode "6.0") (dash) (s))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@
 ;;; Code:
 
 (require 'lsp-mode)
+(require 's)
 
 (defvar lsp-pwsh-exe (or (executable-find "pwsh") (executable-find "powershell"))
   "PowerShell executable.")
