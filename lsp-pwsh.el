@@ -30,8 +30,7 @@
 (defvar lsp-pwsh-exe (if (executable-find "pwsh") "pwsh" "powershell")
   "PowerShell executable.")
 
-(defvar lsp-pwsh-dir (concat (file-name-directory (or load-file-name buffer-file-name))
-                             "modules/")
+(defvar lsp-pwsh-dir (expand-file-name (locate-user-emacs-file ".extension/pwsh/PowerShellEditorServices/"))
   "Path to PowerShellEditorServices.")
 
 (defvar lsp-pwsh-cache-dir (expand-file-name (locate-user-emacs-file ".lsp-pwsh/"))
@@ -81,6 +80,19 @@ Must not nil.")
                       (advice-add 'company-tng--supress-post-completion
                                   :after-while
                                   'lsp-pwsh--force-post-completion)))))
+
+(defvar lsp-pwsh--get-bin (concat (file-name-directory (or load-file-name buffer-file-name))
+                                  "bin/Get-Bin.ps1"))
+(let ((parent-dir (file-name-directory (directory-file-name lsp-pwsh-dir))))
+  (unless (file-exists-p parent-dir)
+    (call-process-shell-command
+     (s-join " " `(,lsp-pwsh-exe
+                   "-NoProfile" "-NonInteractive"
+                   ,@(if (eq system-type 'windows-nt) `("-ExecutionPolicy" "Bypass"))
+                   "-Command"
+                   ,(format "\"& '%s' -Destination %s\""
+                            lsp-pwsh--get-bin parent-dir)))
+     nil t nil)))
 
 (lsp-register-client
  (make-lsp-client

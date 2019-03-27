@@ -9,7 +9,7 @@ Using [straight.el](https://github.com/raxod502/straight.el)
   :straight (lsp-pwsh
              :host github
              :repo "kiennq/lsp-powershell"
-             :files (:defaults "modules"))
+             :files (:defaults "bin"))
   :hook (powershell-mode . (lambda () (require 'lsp-pwsh) (lsp)))
   :defer t)
 ```
