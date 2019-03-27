@@ -27,10 +27,10 @@
 
 (require 'lsp-mode)
 
-(defvar lsp-pwsh-exe (if (executable-find "pwsh") "pwsh" "powershell")
+(defvar lsp-pwsh-exe (or (executable-find "pwsh") (executable-find "powershell"))
   "PowerShell executable.")
 
-(defvar lsp-pwsh-dir (expand-file-name (locate-user-emacs-file ".extension/pwsh/PowerShellEditorServices/"))
+(defvar lsp-pwsh-dir (expand-file-name (locate-user-emacs-file ".extension/pwsh/PowerShellEditorServices"))
   "Path to PowerShellEditorServices.")
 
 (defvar lsp-pwsh-cache-dir (expand-file-name (locate-user-emacs-file ".lsp-pwsh/"))
@@ -41,24 +41,22 @@ Must not nil.")
 
 (defun lsp-pwsh--command ()
   "Return the command to start server."
-  `(,lsp-pwsh-exe "-NoProfile"
+  `(,lsp-pwsh-exe "-NoProfile" "-NonInteractive" "-NoLogo"
     ,@(if (eq system-type 'windows-nt) '("-ExecutionPolicy" "Bypass"))
-    ,lsp-pwsh-exe "-NoProfile" "-NonInteractive"
-    "-Command"
-    ,(format "\"%s\""
-             (s-join " "
-                     `(,(format "& '%s/PowerShellEditorServices/Start-EditorServices.ps1'" lsp-pwsh-dir)
-                       "-HostName" "'Emacs Host'"
-                       "-HostProfileId" "'Emacs.LSP'"
-                       "-HostVersion" "0.1"
-                       "-LogPath" ,(format "'%s/log.txt'" lsp-pwsh-cache-dir)
-                       "-LogLevel" "Normal"
-                       "-SessionDetailsPath"
-                       ,(format "'%s/sess-%d.json'" lsp-pwsh-cache-dir (incf lsp-pwsh--sess-id))
-                       "-AdditionalModules" "@('PowerShellEditorServices.VSCode')"
-                       "-Stdio"
-                       "-BundledModulesPath" ,(format "'%s'" lsp-pwsh-dir)
-                       "-FeatureFlags" "@()")))
+    "-OutputFormat" "Text"
+    "-File"
+    ,(concat lsp-pwsh-dir "/PowerShellEditorServices/Start-EditorServices.ps1")
+    "-HostName" "'Emacs Host'"
+    "-HostProfileId" "'Emacs.LSP'"
+    "-HostVersion" "0.1"
+    "-LogPath" ,(concat lsp-pwsh-cache-dir "/log.txt")
+    "-LogLevel" "Normal"
+    "-SessionDetailsPath"
+    ,(format "%s/sess-%d.json" lsp-pwsh-cache-dir (incf lsp-pwsh--sess-id))
+    "-AdditionalModules" "@('PowerShellEditorServices.VSCode')"
+    "-Stdio"
+    "-BundledModulesPath" ,lsp-pwsh-dir
+    "-FeatureFlags" "@(' ')"
     ))
 
 (defun lsp-pwsh--extra-init-params ()
@@ -90,9 +88,10 @@ Must not nil.")
                    "-NoProfile" "-NonInteractive"
                    ,@(if (eq system-type 'windows-nt) `("-ExecutionPolicy" "Bypass"))
                    "-Command"
-                   ,(format "\"& '%s' -Destination %s\""
-                            lsp-pwsh--get-bin parent-dir)))
-     nil t nil)))
+                   ,(shell-quote-argument
+                     (format "& '%s' -Destination %s"
+                             lsp-pwsh--get-bin parent-dir))))
+     nil nil nil)))
 
 (lsp-register-client
  (make-lsp-client
@@ -103,6 +102,13 @@ Must not nil.")
   :initialization-options 'lsp-pwsh--extra-init-params
   :notification-handlers (lsp-ht ("powerShell/executionStatusChanged" 'ignore))
   ))
+
+(defun lsp-pwsh--filter-cr (str)
+  "Filter CR entities from STR."
+  (when (and (eq system-type 'windows-nt) str)
+      (replace-regexp-in-string "\r" "" str)))
+(advice-add 'lsp-ui-doc--extract :filter-return #'lsp-pwsh--filter-cr)
+(advice-add 'lsp-ui-sideline--extract-info :filter-return #'lsp-pwsh--filter-cr)
 
 (provide 'lsp-pwsh)
 ;;; lsp-pwsh.el ends here
