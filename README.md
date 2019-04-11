@@ -8,13 +8,15 @@ Using [straight.el](https://github.com/raxod502/straight.el)
 (use-package lsp-pwsh
   :straight (lsp-pwsh
              :host github
-             :repo "kiennq/lsp-powershell"
-             :files (:defaults "bin"))
+             :repo "kiennq/lsp-powershell")
   :hook (powershell-mode . (lambda () (require 'lsp-pwsh) (lsp)))
   :defer t)
 ```
 
 You can customize `lsp-pwsh-dir` and `lsp-pwsh-cache-dir` as you see fit.
+
+To redownload the latest version of [PowerShellEditorServices](https://github.com/PowerShell/PowerShellEditorServices),
+use `C-u M-x lsp-pwsh-setup`.
 
 ## Manual
 
