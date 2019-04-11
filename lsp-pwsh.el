@@ -27,14 +27,15 @@
 
 (require 'lsp-mode)
 (require 's)
+(require 'f)
 
 (defvar lsp-pwsh-exe (or (executable-find "pwsh") (executable-find "powershell"))
   "PowerShell executable.")
 
-(defvar lsp-pwsh-dir (expand-file-name (locate-user-emacs-file ".extension/pwsh/PowerShellEditorServices"))
-  "Path to PowerShellEditorServices.")
+(defvar lsp-pwsh-dir (expand-file-name ".extension/pwsh/PowerShellEditorServices" user-emacs-directory)
+  "Path to PowerShellEditorServices without last slash.")
 
-(defvar lsp-pwsh-cache-dir (expand-file-name (locate-user-emacs-file ".lsp-pwsh/"))
+(defvar lsp-pwsh-cache-dir (expand-file-name ".lsp-pwsh" user-emacs-directory)
   "Path to directory where server will write cache files.
 Must not nil.")
 
@@ -46,11 +47,11 @@ Must not nil.")
     ,@(if (eq system-type 'windows-nt) '("-ExecutionPolicy" "Bypass"))
     "-OutputFormat" "Text"
     "-File"
-    ,(concat lsp-pwsh-dir "/PowerShellEditorServices/Start-EditorServices.ps1")
+    ,(f-join lsp-pwsh-dir "PowerShellEditorServices/Start-EditorServices.ps1")
     "-HostName" "'Emacs Host'"
     "-HostProfileId" "'Emacs.LSP'"
     "-HostVersion" "0.1"
-    "-LogPath" ,(concat lsp-pwsh-cache-dir "/log.txt")
+    "-LogPath" ,(f-join lsp-pwsh-cache-dir "log.txt")
     "-LogLevel" "Normal"
     "-SessionDetailsPath"
     ,(format "%s/sess-%d.json" lsp-pwsh-cache-dir (incf lsp-pwsh--sess-id))
@@ -80,20 +81,6 @@ Must not nil.")
                                   :after-while
                                   'lsp-pwsh--force-post-completion)))))
 
-(defvar lsp-pwsh--get-bin (concat (file-name-directory (or load-file-name buffer-file-name))
-                                  "bin/Get-Bin.ps1"))
-(let ((parent-dir (file-name-directory (directory-file-name lsp-pwsh-dir))))
-  (unless (file-exists-p parent-dir)
-    (call-process-shell-command
-     (s-join " " `(,lsp-pwsh-exe
-                   "-NoProfile" "-NonInteractive"
-                   ,@(if (eq system-type 'windows-nt) `("-ExecutionPolicy" "Bypass"))
-                   "-Command"
-                   ,(shell-quote-argument
-                     (format "& '%s' -Destination %s"
-                             lsp-pwsh--get-bin parent-dir))))
-     nil nil nil)))
-
 (lsp-register-client
  (make-lsp-client
   :new-connection (lsp-stdio-connection 'lsp-pwsh--command)
@@ -110,6 +97,38 @@ Must not nil.")
       (replace-regexp-in-string "\r" "" str)))
 (advice-add 'lsp-ui-doc--extract :filter-return #'lsp-pwsh--filter-cr)
 (advice-add 'lsp-ui-sideline--extract-info :filter-return #'lsp-pwsh--filter-cr)
+
+;;; Utils
+(defconst lsp-pwsh-unzip-script "powershell -noprofile -noninteractive \
+-nologo -ex bypass Expand-Archive -path '%s' -dest '%s'"
+  "Powershell script to unzip vscode extension package file.")
+
+(defcustom lsp-pwsh-github-asset-url
+  "https://github.com/%s/%s/releases/latest/download/%s"
+  "GitHub latest asset template url."
+  :group 'lsp-pwsh
+  :type 'string)
+
+(defun lsp-pwsh--get-extension (url dest)
+  "Get extension from URL and extract to DEST."
+  (let ((temp-file (make-temp-file "ext" nil ".zip")))
+    (url-copy-file url temp-file 'overwrite)
+    (if (file-exists-p dest) (delete-directory dest 'recursive))
+    (shell-command (format lsp-pwsh-unzip-script temp-file dest))))
+
+(defun lsp-pwsh-setup (&optional forced)
+  "Downloading PowerShellEditorServices to `lsp-pwsh-dir'.
+FORCED if specified."
+  (interactive "P")
+  (let ((parent-dir (file-name-directory lsp-pwsh-dir)))
+    (unless (and (not forced) (file-exists-p parent-dir))
+      (lsp-pwsh--get-extension
+       (format lsp-pwsh-github-asset-url "PowerShell" "PowerShellEditorServices" "PowerShellEditorServices.zip")
+       parent-dir)
+      (message "lsp-pwsh: Downloading done!")))
+  )
+
+(lsp-pwsh-setup)
 
 (provide 'lsp-pwsh)
 ;;; lsp-pwsh.el ends here
