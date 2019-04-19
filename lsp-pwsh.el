@@ -1,8 +1,9 @@
 ;;; lsp-pwsh.el --- lsp-mode client for PowerShellEditorServices  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2019  Kien Nguyen
-
 ;; Author: kien.n.quang@gmail.com
+;; URL: https://github.com/kiennq/lsp-powershell
+;; Package-Version: 20190411.1904
 ;; Keywords: languages
 ;; Package-Requires: ((emacs "25.1") (lsp-mode "6.0") (dash) (s))
 
