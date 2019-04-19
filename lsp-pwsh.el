@@ -1,7 +1,6 @@
 ;;; lsp-pwsh.el --- lsp-mode client for PowerShellEditorServices  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2019  Kien Nguyen
-
 ;; Author: kien.n.quang@gmail.com
 ;; URL: https://github.com/kiennq/lsp-powershell
 ;; Package-Version: 20190411.1904
@@ -101,7 +100,8 @@ Must not nil.")
 (advice-add 'lsp-ui-sideline--extract-info :filter-return #'lsp-pwsh--filter-cr)
 
 ;;; Utils
-(defconst lsp-pwsh-unzip-script "%s -noprofile -noninteractive -nologo -ex bypass -command Expand-Archive -path '%s' -dest '%s'"
+(defconst lsp-pwsh-unzip-script "powershell -noprofile -noninteractive \
+-nologo -ex bypass Expand-Archive -path '%s' -dest '%s'"
   "Powershell script to unzip vscode extension package file.")
 
 (defcustom lsp-pwsh-github-asset-url
@@ -124,7 +124,7 @@ FORCED if specified."
   (let ((parent-dir (file-name-directory lsp-pwsh-dir)))
     (unless (and (not forced) (file-exists-p parent-dir))
       (lsp-pwsh--get-extension
-       (format lsp-pwsh-github-asset-url (eval 'lsp-pwsh-exe) "PowerShell" "PowerShellEditorServices" "PowerShellEditorServices.zip")
+       (format lsp-pwsh-github-asset-url "PowerShell" "PowerShellEditorServices" "PowerShellEditorServices.zip")
        parent-dir)
       (message "lsp-pwsh: Downloading done!")))
   )
