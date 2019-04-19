@@ -4,7 +4,7 @@
 
 ;; Author: kien.n.quang@gmail.com
 ;; URL: https://github.com/kiennq/lsp-powershell
-;; Version: 0.0.1
+;; Package-Version: 0.0.1
 ;; Keywords: languages
 ;; Package-Requires: ((emacs "25.1") (lsp-mode "6.0") (dash) (s))
 
