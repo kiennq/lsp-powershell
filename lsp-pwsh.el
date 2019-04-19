@@ -29,7 +29,7 @@
 (require 's)
 (require 'f)
 
-(defvar lsp-pwsh-exe (or (executable-find "pwsh") (executable-find "powershell"))
+(defvar lsp-pwsh-exe (or (executable-find "powershell") (executable-find "pwsh"))
   "PowerShell executable.")
 
 (defvar lsp-pwsh-dir (expand-file-name ".extension/pwsh/PowerShellEditorServices" user-emacs-directory)
