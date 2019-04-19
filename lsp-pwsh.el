@@ -99,8 +99,7 @@ Must not nil.")
 (advice-add 'lsp-ui-sideline--extract-info :filter-return #'lsp-pwsh--filter-cr)
 
 ;;; Utils
-(defconst lsp-pwsh-unzip-script "powershell -noprofile -noninteractive \
--nologo -ex bypass Expand-Archive -path '%s' -dest '%s'"
+(defconst lsp-pwsh-unzip-script "%s -noprofile -noninteractive -nologo -ex bypass -command Expand-Archive -path '%s' -dest '%s'"
   "Powershell script to unzip vscode extension package file.")
 
 (defcustom lsp-pwsh-github-asset-url
@@ -114,7 +113,7 @@ Must not nil.")
   (let ((temp-file (make-temp-file "ext" nil ".zip")))
     (url-copy-file url temp-file 'overwrite)
     (if (file-exists-p dest) (delete-directory dest 'recursive))
-    (shell-command (format lsp-pwsh-unzip-script temp-file dest))))
+    (shell-command (format lsp-pwsh-unzip-script lsp-pwsh-exe temp-file dest))))
 
 (defun lsp-pwsh-setup (&optional forced)
   "Downloading PowerShellEditorServices to `lsp-pwsh-dir'.
