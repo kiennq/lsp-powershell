@@ -99,8 +99,11 @@ Must not nil.")
 (advice-add 'lsp-ui-sideline--extract-info :filter-return #'lsp-pwsh--filter-cr)
 
 ;;; Utils
-(defconst lsp-pwsh-unzip-script "%s -noprofile -noninteractive -nologo -ex bypass -command Expand-Archive -path '%s' -dest '%s'"
+(defconst lsp-pwsh-unzip-script "%s -noprofile -noninteractive -nologo -ex bypass -command Expand-Archive -Path '%s' -DestinationPath '%s'"
   "Powershell script to unzip vscode extension package file.")
+
+(defconst lsp-pwsh-editor-svcs-dl-script "%s -noprofile -noninteractive -nologo -ex bypass -command Invoke-WebRequest -uri '%s' -outfile '%s'"
+  "Command executed via `shell-command' to download the latest PowerShellEditorServices release.")
 
 (defcustom lsp-pwsh-github-asset-url
   "https://github.com/%s/%s/releases/latest/download/%s"
@@ -110,8 +113,9 @@ Must not nil.")
 
 (defun lsp-pwsh--get-extension (url dest)
   "Get extension from URL and extract to DEST."
-  (let ((temp-file (make-temp-file "ext" nil ".zip")))
-    (url-copy-file url temp-file 'overwrite)
+  (let ((temp-file (concat temporary-file-directory (make-temp-file-internal "ext" nil ".zip" nil))))
+    ; since we know it's installed, use powershell to download the file (and avoid url.el bugginess or additional libraries)
+    (shell-command (format lsp-pwsh-editor-svcs-dl-cmd lsp-pwsh-exe url temp-file))
     (if (file-exists-p dest) (delete-directory dest 'recursive))
     (shell-command (format lsp-pwsh-unzip-script lsp-pwsh-exe temp-file dest))))
 
