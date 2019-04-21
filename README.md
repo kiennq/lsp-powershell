@@ -5,8 +5,7 @@
 ## Linux/macOS Pre-requisite
 
 Ensure you have installed [PowerShell
-Core](https://github.com/PowerShell/PowerShell) before continuing - PowerShell
-is required to download and run the language server.
+Core](https://github.com/PowerShell/PowerShell) before continuing - PowerShell is required to download and run the language server.
 
 ## Recommended
 Using [straight.el](https://github.com/raxod502/straight.el)
