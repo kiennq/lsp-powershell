@@ -4,7 +4,6 @@
 
 ;; Author: kien.n.quang@gmail.com
 ;; URL: https://github.com/kiennq/lsp-powershell
-;; Package-Version: 20190420.1258
 ;; Keywords: languages
 ;; Package-Requires: ((emacs "25.1") (lsp-mode "6.0") (dash) (s))
 
@@ -115,7 +114,7 @@ Must not nil.")
 
 (defun lsp-pwsh--get-extension (url dest)
   "Get extension from URL and extract to DEST."
-  (let ((temp-file (concat temporary-file-directory (make-temp-file-internal "ext" nil ".zip" nil))))
+  (let ((temp-file (make-temp-file "ext" nil ".zip")))
     ; since we know it's installed, use powershell to download the file (and avoid url.el bugginess or additional libraries)
     (shell-command (format lsp-pwsh-editor-svcs-dl-cmd lsp-pwsh-exe url temp-file))
     (if (file-exists-p dest) (delete-directory dest 'recursive))
