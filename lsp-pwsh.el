@@ -3,6 +3,7 @@
 ;; Copyright (C) 2019  Kien Nguyen
 
 ;; Author: kien.n.quang@gmail.com
+;; URL: https://github.com/kiennq/lsp-powershell
 ;; Keywords: languages
 ;; Package-Requires: ((emacs "25.1") (lsp-mode "6.0") (dash) (s))
 
@@ -99,9 +100,11 @@ Must not nil.")
 (advice-add 'lsp-ui-sideline--extract-info :filter-return #'lsp-pwsh--filter-cr)
 
 ;;; Utils
-(defconst lsp-pwsh-unzip-script "powershell -noprofile -noninteractive \
--nologo -ex bypass Expand-Archive -path '%s' -dest '%s'"
+(defconst lsp-pwsh-unzip-script "%s -noprofile -noninteractive -nologo -ex bypass -command Expand-Archive -Path '%s' -DestinationPath '%s'"
   "Powershell script to unzip vscode extension package file.")
+
+(defconst lsp-pwsh-editor-svcs-dl-script "%s -noprofile -noninteractive -nologo -ex bypass -command Invoke-WebRequest -uri '%s' -outfile '%s'"
+  "Command executed via `shell-command' to download the latest PowerShellEditorServices release.")
 
 (defcustom lsp-pwsh-github-asset-url
   "https://github.com/%s/%s/releases/latest/download/%s"
@@ -112,9 +115,10 @@ Must not nil.")
 (defun lsp-pwsh--get-extension (url dest)
   "Get extension from URL and extract to DEST."
   (let ((temp-file (make-temp-file "ext" nil ".zip")))
-    (url-copy-file url temp-file 'overwrite)
+    ; since we know it's installed, use powershell to download the file (and avoid url.el bugginess or additional libraries)
+    (shell-command (format lsp-pwsh-editor-svcs-dl-cmd lsp-pwsh-exe url temp-file))
     (if (file-exists-p dest) (delete-directory dest 'recursive))
-    (shell-command (format lsp-pwsh-unzip-script temp-file dest))))
+    (shell-command (format lsp-pwsh-unzip-script lsp-pwsh-exe temp-file dest))))
 
 (defun lsp-pwsh-setup (&optional forced)
   "Downloading PowerShellEditorServices to `lsp-pwsh-dir'.
