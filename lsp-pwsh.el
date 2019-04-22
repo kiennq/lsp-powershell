@@ -116,7 +116,7 @@ Must not nil.")
   "Get extension from URL and extract to DEST."
   (let ((temp-file (make-temp-file "ext" nil ".zip")))
     ; since we know it's installed, use powershell to download the file (and avoid url.el bugginess or additional libraries)
-    (shell-command (format lsp-pwsh-editor-svcs-dl-cmd lsp-pwsh-exe url temp-file))
+    (shell-command (format lsp-pwsh-editor-svcs-dl-script lsp-pwsh-exe url temp-file))
     (if (file-exists-p dest) (delete-directory dest 'recursive))
     (shell-command (format lsp-pwsh-unzip-script lsp-pwsh-exe temp-file dest))))
 
