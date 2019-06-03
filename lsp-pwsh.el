@@ -239,11 +239,11 @@ Must not nil.")
 
 (lsp-register-client
  (make-lsp-client
-  :new-connection (lsp-stdio-connection 'lsp-pwsh--command)
+  :new-connection (lsp-stdio-connection #'lsp-pwsh--command)
   :major-modes lsp-pwsh--major-modes
   :server-id 'pwsh-ls
   :priority 1
-  :initialization-options 'lsp-pwsh--extra-init-params
+  :initialization-options #'lsp-pwsh--extra-init-params
   :notification-handlers (lsp-ht ("powerShell/executionStatusChanged" 'ignore))
   ))
 
