@@ -29,6 +29,7 @@
 (require 'lsp-mode)
 (require 's)
 (require 'f)
+(require 'cl-lib)
 
 (defgroup lsp-pwsh nil
   "LSP support for PowerShell, using the PowerShellEditorServices."
@@ -187,7 +188,7 @@ Must not nil.")
                   "-LogPath" ,(f-join lsp-pwsh-cache-dir "log.txt")
                   "-LogLevel" ,lsp-pwsh-developer-editor-services-log-level
                   "-SessionDetailsPath"
-                  ,(format "%s/sess-%d.json" lsp-pwsh-cache-dir (incf lsp-pwsh--sess-id))
+                  ,(format "%s/sess-%d.json" lsp-pwsh-cache-dir (cl-incf lsp-pwsh--sess-id))
                   "-AdditionalModules" "@('PowerShellEditorServices.VSCode')"
                   "-Stdio"
                   "-BundledModulesPath" ,lsp-pwsh-dir
@@ -285,7 +286,7 @@ FORCED if specified."
        (format lsp-pwsh-github-asset-url "PowerShell" "PowerShellEditorServices" "PowerShellEditorServices.zip")
        parent-dir)
       (message "lsp-pwsh: Downloading done!")))
-  )
+  (add-to-list 'lsp-language-id-configuration '(powershell-mode . "powershell")))
 
 (lsp-pwsh-setup)
 
