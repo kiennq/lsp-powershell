@@ -24,7 +24,7 @@ Using [straight.el](https://github.com/raxod502/straight.el)
 Using [quelpa](https://framagit.org/steckerhalter/quelpa)
 
 ``` emacs-lisp
-(quelpa '(lsp-pwsh :fetcher github :url "kiennq/lsp-powershell"))
+(quelpa '(lsp-pwsh :fetcher github :repo "kiennq/lsp-powershell"))
 ```
 
 You can customize `lsp-pwsh-dir` and `lsp-pwsh-cache-dir` as you see fit.
