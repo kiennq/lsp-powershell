@@ -253,7 +253,7 @@ Must not nil.")
   (when (and (eq system-type 'windows-nt) str)
     (replace-regexp-in-string "\r" "" str)))
 (advice-add 'lsp-ui-doc--extract :filter-return #'lsp-pwsh--filter-cr)
-(advice-add 'lsp-ui-sideline--extract-info :filter-return #'lsp-pwsh--filter-cr)
+(advice-add 'lsp-ui-sideline--format-info :filter-return #'lsp-pwsh--filter-cr)
 
 ;;; Utils
 (defconst lsp-pwsh-unzip-script "%s -noprofile -noninteractive -nologo -ex bypass -command Expand-Archive -Path '%s' -DestinationPath '%s'"
