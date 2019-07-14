@@ -5,7 +5,7 @@
 ;; Author: kien.n.quang@gmail.com
 ;; URL: https://github.com/kiennq/lsp-powershell
 ;; Keywords: languages
-;; Package-Requires: ((emacs "25.1") (lsp-mode "6.0") (dash) (s))
+;; Package-Requires: ((emacs "25.1") (lsp-mode "6.1") (s "1.12.0") (dap-mode "0.2"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
 
 ;;; Commentary:
 
-;; 
+;;
 
 ;;; Code:
 
@@ -30,12 +30,14 @@
 (require 's)
 (require 'f)
 (require 'cl-lib)
+(require 'dap-utils)
 
 (defgroup lsp-pwsh nil
   "LSP support for PowerShell, using the PowerShellEditorServices."
   :group 'lsp-mode
   :package-version '(lsp-mode . "6.1"))
 
+;; PowerShell vscode flags
 (defcustom lsp-pwsh-help-completion "BlockComment"
   "Controls the comment-based help completion behavior triggered by typing '##'.
 Set the generated help style with 'BlockComment' or 'LineComment'.
@@ -163,17 +165,28 @@ Valid values are 'Diagnostic', 'Verbose', 'Normal', 'Warning', and 'Error'"
   '(repeat string)
   :group 'lsp-pwsh)
 
-(defvar lsp-pwsh-exe (or (executable-find "pwsh") (executable-find "powershell"))
-  "PowerShell executable.")
+;; lsp-pwsh custom variables
+(defcustom lsp-pwsh-ext-path (expand-file-name "vscode/ms-vscode.PowerShell"
+                                               dap-utils-extension-path)
+  "The path to powershell vscode extension."
+  :group 'lsp-pwsh
+  :type 'string)
 
-(defvar lsp-pwsh-dir (expand-file-name ".extension/pwsh/PowerShellEditorServices" user-emacs-directory)
-  "Path to PowerShellEditorServices without last slash.")
+(defcustom lsp-pwsh-exe (or (executable-find "pwsh") (executable-find "powershell"))
+  "PowerShell executable."
+  :type 'string
+  :group 'lsp-pwsh)
+
+(defcustom lsp-pwsh-dir (expand-file-name "extension/modules" lsp-pwsh-ext-path)
+  "Path to PowerShellEditorServices without last slash."
+  :type 'string
+  :group 'lsp-pwsh)
 
 (defvar lsp-pwsh-cache-dir (expand-file-name ".lsp-pwsh" user-emacs-directory)
   "Path to directory where server will write cache files.
 Must not nil.")
 
-(defvar lsp-pwsh--sess-id 0)
+(defvar lsp-pwsh--sess-id (emacs-pid))
 
 (defun lsp-pwsh--command ()
   "Return the command to start server."
@@ -188,8 +201,8 @@ Must not nil.")
                   "-LogPath" ,(f-join lsp-pwsh-cache-dir "log.txt")
                   "-LogLevel" ,lsp-pwsh-developer-editor-services-log-level
                   "-SessionDetailsPath"
-                  ,(format "%s/sess-%d.json" lsp-pwsh-cache-dir (cl-incf lsp-pwsh--sess-id))
-                  "-AdditionalModules" "@('PowerShellEditorServices.VSCode')"
+                  ,(format "%s/sess-%d.json" lsp-pwsh-cache-dir lsp-pwsh--sess-id)
+                  ;; "-AdditionalModules" "@('PowerShellEditorServices.VSCode')"
                   "-Stdio"
                   "-BundledModulesPath" ,lsp-pwsh-dir
                   "-FeatureFlags" "@(' ')"
@@ -199,21 +212,15 @@ Must not nil.")
   "Return form describing parameters for language server."
   )
 
-(defun lsp-pwsh--force-post-completion (&rest _args)
-  (advice-remove 'company-tng--supress-post-completion 'lsp-pwsh--force-post-completion)
-  nil)
-
 (defvar lsp-pwsh--major-modes '(powershell-mode))
 
+(defun lsp-pwsh--force-post-completion (&rest _args)
+  (not (memq major-mode lsp-pwsh--major-modes)))
+
 (if (fboundp 'company-lsp)
-    (advice-add 'company-tng-frontend
-                :after
-                #'(lambda (command)
-                    (when (and (eq command 'pre-command)
-                               (memq major-mode lsp-pwsh--major-modes))
-                      (advice-add 'company-tng--supress-post-completion
-                                  :after-while
-                                  'lsp-pwsh--force-post-completion)))))
+    (advice-add 'company-tng--supress-post-completion
+                :after-while
+                'lsp-pwsh--force-post-completion))
 
 (lsp-register-custom-settings
  '(("powershell.developer.featureFlags" lsp-pwsh-developer-feature-flags)
@@ -252,42 +259,17 @@ Must not nil.")
   "Filter CR entities from STR."
   (when (and (eq system-type 'windows-nt) str)
     (replace-regexp-in-string "\r" "" str)))
+
 (advice-add 'lsp-ui-doc--extract :filter-return #'lsp-pwsh--filter-cr)
 (advice-add 'lsp-ui-sideline--format-info :filter-return #'lsp-pwsh--filter-cr)
 
+(add-to-list 'lsp-language-id-configuration '(powershell-mode . "powershell"))
 ;;; Utils
-(defconst lsp-pwsh-unzip-script "%s -noprofile -noninteractive -nologo -ex bypass -command Expand-Archive -Path '%s' -DestinationPath '%s'"
-  "Powershell script to unzip vscode extension package file.")
 
-(defconst lsp-pwsh-editor-svcs-dl-script "%s -noprofile -noninteractive -nologo -ex bypass -command Invoke-WebRequest -UseBasicParsing -uri '%s' -outfile '%s'"
-  "Command executed via `shell-command' to download the latest PowerShellEditorServices release.")
+(dap-utils-vscode-setup-function "lsp-pwsh" "ms-vscode" "PowerShell"
+                                 lsp-pwsh-ext-path)
 
-(defcustom lsp-pwsh-github-asset-url
-  "https://github.com/%s/%s/releases/latest/download/%s"
-  "GitHub latest asset template url."
-  :group 'lsp-pwsh
-  :type 'string)
-
-(defun lsp-pwsh--get-extension (url dest)
-  "Get extension from URL and extract to DEST."
-  (let ((temp-file (make-temp-file "ext" nil ".zip")))
-                                        ; since we know it's installed, use powershell to download the file (and avoid url.el bugginess or additional libraries)
-    (shell-command (format lsp-pwsh-editor-svcs-dl-script lsp-pwsh-exe url temp-file))
-    (if (file-exists-p dest) (delete-directory dest 'recursive))
-    (shell-command (format lsp-pwsh-unzip-script lsp-pwsh-exe temp-file dest))))
-
-(defun lsp-pwsh-setup (&optional forced)
-  "Downloading PowerShellEditorServices to `lsp-pwsh-dir'.
-FORCED if specified."
-  (interactive "P")
-  (let ((parent-dir (file-name-directory lsp-pwsh-dir)))
-    (unless (and (not forced) (file-exists-p parent-dir))
-      (lsp-pwsh--get-extension
-       (format lsp-pwsh-github-asset-url "PowerShell" "PowerShellEditorServices" "PowerShellEditorServices.zip")
-       parent-dir)
-      (message "lsp-pwsh: Downloading done!")))
-  (add-to-list 'lsp-language-id-configuration '(powershell-mode . "powershell")))
-
+;; Download vscode extension
 (lsp-pwsh-setup)
 
 (provide 'lsp-pwsh)
