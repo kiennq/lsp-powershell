@@ -253,6 +253,10 @@ Must not nil.")
   :priority 1
   :initialization-options #'lsp-pwsh--extra-init-params
   :notification-handlers (lsp-ht ("powerShell/executionStatusChanged" 'ignore))
+  :initialized-fn (lambda (w)
+                    (with-lsp-workspace w
+                      (lsp--set-configuration
+                       (lsp-configuration-section "powershell"))))
   ))
 
 (defun lsp-pwsh--filter-cr (str)

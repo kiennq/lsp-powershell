@@ -29,8 +29,13 @@
 (require 'f)
 (require 'dash)
 
-(defcustom lsp-pwsh-ext-program `("node"
-                                    ,(f-join lsp-pwsh-ext-path "extension/out/src/debugAdapter.js"))
+(defgroup dap-pwsh nil
+  "Debugger support for PowerShell."
+  :group 'dap-mode
+  :package-version '(dap-mode . "0.2"))
+
+(defcustom dap-pwsh-ext-program `("node"
+                                  ,(f-join lsp-pwsh-ext-path "extension/out/src/debugAdapter.js"))
   "The path to the pwsh debugger."
   :group 'dap-pwsh
   :type '(repeat string))
@@ -38,7 +43,7 @@
 (defun dap-pwsh--populate-start-file-args (conf)
   "Populate CONF with the required arguments."
   (-> conf
-      (dap--put-if-absent :dap-server-path lsp-pwsh-ext-program)
+      (dap--put-if-absent :dap-server-path dap-pwsh-ext-program)
       (dap--put-if-absent :type "PowerShell")
       (dap--put-if-absent :cwd default-directory)
       (dap--put-if-absent :program (read-file-name "Select the file to run:" nil (buffer-file-name) t))
