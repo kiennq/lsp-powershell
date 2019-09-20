@@ -5,7 +5,7 @@
 ;; Author: kien.n.quang@gmail.com
 ;; URL: https://github.com/kiennq/lsp-powershell
 ;; Keywords: languages
-;; Package-Requires: ((emacs "25.1") (lsp-mode "6.1") (s "1.12.0") (dap-mode "0.2"))
+;; Package-Requires: ((emacs "25.1") (lsp-mode "6.1") (dap-mode "0.2"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -27,7 +27,6 @@
 ;;; Code:
 
 (require 'lsp-mode)
-(require 's)
 (require 'f)
 (require 'cl-lib)
 (require 'dap-utils)
@@ -182,8 +181,12 @@ Valid values are 'Diagnostic', 'Verbose', 'Normal', 'Warning', and 'Error'"
   :type 'string
   :group 'lsp-pwsh)
 
-(defvar lsp-pwsh-cache-dir (expand-file-name ".lsp-pwsh" user-emacs-directory)
-  "Path to directory where server will write cache files.
+(defvar lsp-pwsh-log-path (expand-file-name "extension/logs" lsp-pwsh-ext-path)
+  "Path to directory where server will write log files.
+Must not nil.")
+
+(defvar lsp-pwsh-session-path (expand-file-name "extension/sessions" lsp-pwsh-ext-path)
+  "Path to directory where server will write log files.
 Must not nil.")
 
 (defvar lsp-pwsh--sess-id (emacs-pid))

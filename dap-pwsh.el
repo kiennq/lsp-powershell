@@ -22,6 +22,8 @@
 ;; Package-Requires: ((emacs "25.1") (lsp-mode "4.0") (dap-mode "0.2"))
 ;; Version: 0.2
 
+;;; Commentary:
+
 ;;; Code:
 
 (require 'dap-mode)
@@ -39,6 +41,10 @@
   "The path to the pwsh debugger."
   :group 'dap-pwsh
   :type '(repeat string))
+
+;; This is needed for debugAdapter.js
+(unless (getenv "VSCODE_PID")
+  (setenv "VSCODE_PID" (number-to-string lsp-pwsh--sess-id)))
 
 (defun dap-pwsh--populate-start-file-args (conf)
   "Populate CONF with the required arguments."
