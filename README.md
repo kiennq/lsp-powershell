@@ -2,6 +2,11 @@
 
 # Installation
 
+## Optional Pre-requisite
+
+You may need [powershell-mode](https://github.com/jschaf/powershell.el) for syntax highlighting.
+The installation instructions bellow assumes that you've already have that.
+
 ## Linux/macOS Pre-requisite
 
 Ensure you have installed [PowerShell
@@ -21,11 +26,15 @@ Using [straight.el](https://github.com/raxod502/straight.el)
 
 ## Alternatives
 
-Using [quelpa](https://framagit.org/steckerhalter/quelpa)
+Using [quelpa](https://framagit.org/steckerhalter/quelpa) with [quelpa-use-package](https://framagit.org/steckerhalter/quelpa-use-package).
 
 ``` emacs-lisp
-(quelpa '(lsp-pwsh :fetcher github :repo "kiennq/lsp-powershell"))
+(use-package lsp-pwsh
+  :quelpa (lsp-pwsh :fetcher github :repo "kiennq/lsp-powershell")
+  :hook (powershell-mode . (lambda () (require 'lsp-pwsh) (lsp-deferred)))
+  :defer t)
 ```
+## Customization
 
 You can customize `lsp-pwsh-dir` and `lsp-pwsh-cache-dir` as you see fit.
 
