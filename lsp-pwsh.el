@@ -181,6 +181,10 @@ Valid values are 'Diagnostic', 'Verbose', 'Normal', 'Warning', and 'Error'"
   :type 'string
   :group 'lsp-pwsh)
 
+(defvar lsp-pwsh-cache-dir (expand-file-name ".lsp-pwsh" user-emacs-directory)
+  "Path to directory where server will write cache files.
+Must not nil.")
+
 (defvar lsp-pwsh-log-path (expand-file-name "extension/logs" lsp-pwsh-ext-path)
   "Path to directory where server will write log files.
 Must not nil.")
