@@ -5,7 +5,7 @@
 ;; Author: kien.n.quang@gmail.com
 ;; URL: https://github.com/kiennq/lsp-powershell
 ;; Keywords: languages
-;; Package-Requires: ((emacs "25.1") (lsp-mode "6.0") (dash) (s))
+;; Package-Requires: ((emacs "25.1") (lsp-mode "6.1"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -22,12 +22,11 @@
 
 ;;; Commentary:
 
-;; 
+;;
 
 ;;; Code:
 
 (require 'lsp-mode)
-(require 's)
 (require 'f)
 (require 'cl-lib)
 
@@ -36,6 +35,7 @@
   :group 'lsp-mode
   :package-version '(lsp-mode . "6.1"))
 
+;; PowerShell vscode flags
 (defcustom lsp-pwsh-help-completion "BlockComment"
   "Controls the comment-based help completion behavior triggered by typing '##'.
 Set the generated help style with 'BlockComment' or 'LineComment'.
@@ -163,58 +163,6 @@ Valid values are 'Diagnostic', 'Verbose', 'Normal', 'Warning', and 'Error'"
   '(repeat string)
   :group 'lsp-pwsh)
 
-(defvar lsp-pwsh-exe (or (executable-find "pwsh") (executable-find "powershell"))
-  "PowerShell executable.")
-
-(defvar lsp-pwsh-dir (expand-file-name ".extension/pwsh/PowerShellEditorServices" user-emacs-directory)
-  "Path to PowerShellEditorServices without last slash.")
-
-(defvar lsp-pwsh-cache-dir (expand-file-name ".lsp-pwsh" user-emacs-directory)
-  "Path to directory where server will write cache files.
-Must not nil.")
-
-(defvar lsp-pwsh--sess-id 0)
-
-(defun lsp-pwsh--command ()
-  "Return the command to start server."
-  `(,lsp-pwsh-exe "-NoProfile" "-NonInteractive" "-NoLogo"
-                  ,@(if (eq system-type 'windows-nt) '("-ExecutionPolicy" "Bypass"))
-                  "-OutputFormat" "Text"
-                  "-File"
-                  ,(f-join lsp-pwsh-dir "PowerShellEditorServices/Start-EditorServices.ps1")
-                  "-HostName" "'Emacs Host'"
-                  "-HostProfileId" "'Emacs.LSP'"
-                  "-HostVersion" "0.1"
-                  "-LogPath" ,(f-join lsp-pwsh-cache-dir "log.txt")
-                  "-LogLevel" ,lsp-pwsh-developer-editor-services-log-level
-                  "-SessionDetailsPath"
-                  ,(format "%s/sess-%d.json" lsp-pwsh-cache-dir (cl-incf lsp-pwsh--sess-id))
-                  "-AdditionalModules" "@('PowerShellEditorServices.VSCode')"
-                  "-Stdio"
-                  "-BundledModulesPath" ,lsp-pwsh-dir
-                  "-FeatureFlags" "@(' ')"
-                  ))
-
-(defun lsp-pwsh--extra-init-params ()
-  "Return form describing parameters for language server."
-  )
-
-(defun lsp-pwsh--force-post-completion (&rest _args)
-  (advice-remove 'company-tng--supress-post-completion 'lsp-pwsh--force-post-completion)
-  nil)
-
-(defvar lsp-pwsh--major-modes '(powershell-mode))
-
-(if (fboundp 'company-lsp)
-    (advice-add 'company-tng-frontend
-                :after
-                #'(lambda (command)
-                    (when (and (eq command 'pre-command)
-                               (memq major-mode lsp-pwsh--major-modes))
-                      (advice-add 'company-tng--supress-post-completion
-                                  :after-while
-                                  'lsp-pwsh--force-post-completion)))))
-
 (lsp-register-custom-settings
  '(("powershell.developer.featureFlags" lsp-pwsh-developer-feature-flags)
    ("powershell.developer.editorServicesWaitForDebugger" lsp-pwsh-developer-editor-services-wait-for-debugger t)
@@ -238,6 +186,54 @@ Must not nil.")
    ("powershell.scriptAnalysis.enable" lsp-pwsh-script-analysis-enable t)
    ("powershell.helpCompletion" lsp-pwsh-help-completion)))
 
+;; lsp-pwsh custom variables
+(defcustom lsp-pwsh-ext-path (expand-file-name ".extension/pwsh"
+                                               user-emacs-directory)
+  "The path to powershell vscode extension."
+  :group 'lsp-pwsh
+  :type 'string)
+
+(defcustom lsp-pwsh-exe (or (executable-find "pwsh") (executable-find "powershell"))
+  "PowerShell executable."
+  :type 'string
+  :group 'lsp-pwsh)
+
+(defcustom lsp-pwsh-dir (expand-file-name "PowerShellEditorServices" lsp-pwsh-ext-path)
+  "Path to PowerShellEditorServices without last slash."
+  :type 'string
+  :group 'lsp-pwsh)
+
+(defvar lsp-pwsh-log-path (expand-file-name "logs" lsp-pwsh-ext-path)
+  "Path to directory where server will write log files.
+Must not nil.")
+
+(defvar lsp-pwsh--sess-id (emacs-pid))
+
+(defun lsp-pwsh--command ()
+  "Return the command to start server."
+  `(,lsp-pwsh-exe "-NoProfile" "-NonInteractive" "-NoLogo"
+                  ,@(if (eq system-type 'windows-nt) '("-ExecutionPolicy" "Bypass"))
+                  "-OutputFormat" "Text"
+                  "-File"
+                  ,(f-join lsp-pwsh-dir "PowerShellEditorServices/Start-EditorServices.ps1")
+                  "-HostName" "'Emacs Host'"
+                  "-HostProfileId" "'Emacs.LSP'"
+                  "-HostVersion" "0.1"
+                  "-LogPath" ,(f-join lsp-pwsh-log-path "emacs-powershell.log")
+                  "-LogLevel" ,lsp-pwsh-developer-editor-services-log-level
+                  "-SessionDetailsPath"
+                  ,(format "'%s/PSES-VSCode-%d'" lsp-pwsh-log-path lsp-pwsh--sess-id)
+                  ;; "-AdditionalModules" "@('PowerShellEditorServices.VSCode')"
+                  "-Stdio"
+                  "-BundledModulesPath" ,lsp-pwsh-dir
+                  "-FeatureFlags" "@()"
+                  ))
+
+(defun lsp-pwsh--extra-init-params ()
+  "Return form describing parameters for language server.")
+
+(defvar lsp-pwsh--major-modes '(powershell-mode))
+
 (lsp-register-client
  (make-lsp-client
   :new-connection (lsp-stdio-connection #'lsp-pwsh--command)
@@ -246,16 +242,32 @@ Must not nil.")
   :priority 1
   :initialization-options #'lsp-pwsh--extra-init-params
   :notification-handlers (lsp-ht ("powerShell/executionStatusChanged" 'ignore))
+  :initialized-fn (lambda (w)
+                    (with-lsp-workspace w
+                      (lsp--set-configuration
+                       (lsp-configuration-section "powershell"))))
   ))
+
+(add-to-list 'lsp-language-id-configuration '(powershell-mode . "powershell"))
+
+;; Compatibility
+(if (fboundp 'company-lsp)
+    (advice-add 'company-tng--supress-post-completion
+                :after-while
+                (lambda (&rest _)
+                  (not (memq major-mode lsp-pwsh--major-modes)))
+                '((name . --force-post-completion))))
 
 (defun lsp-pwsh--filter-cr (str)
   "Filter CR entities from STR."
   (when (and (eq system-type 'windows-nt) str)
     (replace-regexp-in-string "\r" "" str)))
+
 (advice-add 'lsp-ui-doc--extract :filter-return #'lsp-pwsh--filter-cr)
 (advice-add 'lsp-ui-sideline--format-info :filter-return #'lsp-pwsh--filter-cr)
 
 ;;; Utils
+
 (defconst lsp-pwsh-unzip-script "%s -noprofile -noninteractive -nologo -ex bypass -command Expand-Archive -Path '%s' -DestinationPath '%s'"
   "Powershell script to unzip vscode extension package file.")
 
@@ -271,23 +283,25 @@ Must not nil.")
 (defun lsp-pwsh--get-extension (url dest)
   "Get extension from URL and extract to DEST."
   (let ((temp-file (make-temp-file "ext" nil ".zip")))
-                                        ; since we know it's installed, use powershell to download the file (and avoid url.el bugginess or additional libraries)
+    ;; since we know it's installed, use powershell to download the file
+    ;; (and avoid url.el bugginess or additional libraries)
     (shell-command (format lsp-pwsh-editor-svcs-dl-script lsp-pwsh-exe url temp-file))
+    (message "lsp-pwsh: Downloading done!")
     (if (file-exists-p dest) (delete-directory dest 'recursive))
-    (shell-command (format lsp-pwsh-unzip-script lsp-pwsh-exe temp-file dest))))
+    (shell-command (format lsp-pwsh-unzip-script lsp-pwsh-exe temp-file dest))
+    (message "lsp-pwsh: Finish unzip!")))
 
 (defun lsp-pwsh-setup (&optional forced)
   "Downloading PowerShellEditorServices to `lsp-pwsh-dir'.
-FORCED if specified."
+FORCED if specified with prefix argument."
   (interactive "P")
   (let ((parent-dir (file-name-directory lsp-pwsh-dir)))
     (unless (and (not forced) (file-exists-p parent-dir))
       (lsp-pwsh--get-extension
        (format lsp-pwsh-github-asset-url "PowerShell" "PowerShellEditorServices" "PowerShellEditorServices.zip")
-       parent-dir)
-      (message "lsp-pwsh: Downloading done!")))
-  (add-to-list 'lsp-language-id-configuration '(powershell-mode . "powershell")))
+       parent-dir))))
 
+;; Download extension
 (lsp-pwsh-setup)
 
 (provide 'lsp-pwsh)
