@@ -222,7 +222,7 @@ Must not nil.")
                   "-LogPath" ,(f-join lsp-pwsh-log-path "emacs-powershell.log")
                   "-LogLevel" ,lsp-pwsh-developer-editor-services-log-level
                   "-SessionDetailsPath"
-                  ,(format "'%s/PSES-VSCode-%d'" lsp-pwsh-log-path lsp-pwsh--sess-id)
+                  ,(format "%s/PSES-VSCode-%d" lsp-pwsh-log-path lsp-pwsh--sess-id)
                   ;; "-AdditionalModules" "@('PowerShellEditorServices.VSCode')"
                   "-Stdio"
                   "-BundledModulesPath" ,lsp-pwsh-dir
