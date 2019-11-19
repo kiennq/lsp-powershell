@@ -44,4 +44,6 @@ use `C-u M-x lsp-pwsh-setup`.
 ## Manual
 
 # Debug
-Comming soon...
+Supported via [dap-mode](https://github.com/emacs-lsp/dap-mode).
+
+`lsp-pwsh` provided `dap-pwsh`, which's an extension for `dap-mode`.
