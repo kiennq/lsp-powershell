@@ -1,3 +1,8 @@
+***Depercated***
+
+**Development has been moved to [lsp-mode](https://github.com/emacs-lsp/lsp-mode).**
+
+
 [lsp-mode](https://github.com/emacs-lsp/lsp-mode) client leveraging [PowerShellEditorServices](https://github.com/PowerShell/PowerShellEditorServices)
 
 # Installation
