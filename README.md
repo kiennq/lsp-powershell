@@ -1,4 +1,4 @@
-***Depercated***
+***Deprecated***
 
 **Development has been moved to [lsp-mode](https://github.com/emacs-lsp/lsp-mode).**
 
